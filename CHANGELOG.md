@@ -2,61 +2,70 @@
 
 ## [Unreleased]
 
+## Release Audit: v2.3.0 -> v2.4.1
+
+### What shipped in this line
+- **Security hardening** tightened exposed deployment defaults with loopback-only bind, non-loopback API key enforcement, private-network navigation blocking, and fail-fast proxy deployment validation.
+- **Proxy and geo session identity** moved from user-only scoping to `userId + sessionKey`, allowing parallel sessions with distinct proxy and geo profiles without unsafe reuse or eviction collisions.
+- **Lifecycle control** added staged idle cleanup plus daemon exit policy, with activity-aware timer disarming so live sessions are not collected accidentally.
+- **Fingerprint environment controls** added deployment-level defaults for OS, WebGL, screen dimensions, and humanization, with strict parsing and clear generation-time versus launch-time behavior.
+- **Structured extraction** introduced schema-driven extraction across core API, CLI, and OpenClaw, including validation-time 400s and runtime 422s with stable field-path reporting.
+- **OpenAPI and interactive docs** added `/openapi.json` and `/api/docs`, then hardened the spec and origin handling to match real server behavior.
+- **Release-lane hardening** shipped in `v2.4.1`, ensuring Docker/GHCR publication no longer fails solely because optional GeoLite download during `camoufox-js fetch` is temporarily unavailable.
+
+### Reading guide
+- **`2.4.0`** is the main Wave 2 delivery release.
+- **`2.4.1`** is the follow-up patch that fixes the release-distribution lane while inheriting the full `2.4.0` surface.
+
 ## [2.4.1] - 2026-05-05
 
+### Upgrade Notes
+- **Patch scope**: `2.4.1` keeps the full Wave 2 surface from `2.4.0` and only changes release-distribution behavior.
+- **Operator impact**: Docker/GHCR publication no longer fails solely because `camoufox-js fetch` cannot download the optional GeoLite database during image build.
+
 ### Fixed
-- **Docker release builds** — tolerate transient `camoufox-js fetch` / GeoLite MMDB download failures during image creation
-  - keeps image publication from failing solely because the optional GeoLite database is temporarily unavailable
-  - aligns Docker build behavior with the existing best-effort `postinstall` fetch contract
+- **Docker release builds** now tolerate transient `camoufox-js fetch` / GeoLite MMDB download failures during image creation.
+- **Release-lane consistency** now matches the existing best-effort `postinstall` fetch contract already used by package installation.
 
 ## [2.4.0] - 2026-05-05
 
 ### Upgrade Notes
-- **New Wave 2 surfaces** add OpenAPI specification, interactive Swagger UI documentation, server-wide fingerprint environment controls, idle lifecycle policies, session-level proxy/geo overrides, and structured extraction. These are additive capabilities and do not remove any previous route or alias.
-- **Security enhancements** now include default loopback-only binding (`CAMOFOX_HOST=127.0.0.1`), non-loopback API key enforcement, navigation target validation blocking private/loopback hosts unless `CAMOFOX_ALLOW_PRIVATE_NETWORK=true`, and fail-fast proxy deployment validation.
+- **Wave 2 delivery** adds OpenAPI documentation, deployment-level fingerprint controls, staged idle lifecycle management, session-level proxy/geo overrides, and structured extraction without removing previous route aliases.
+- **Operational posture** is more defensive than in `2.3.0`: exposed deployments now default to loopback-only binding, require an API key on non-loopback binds, reject unsafe private-network navigation by default, and fail fast on unsupported proxy deployment assumptions.
 
 ### Added
-- **OpenAPI 3.1.0 specification** — machine-readable spec available at `/openapi.json`
-  - covers a representative subset of core and OpenClaw endpoints
-  - includes request/response schemas, authentication requirements, and validation rules
-  - enables client generation and contract testing for documented endpoints
-- **Interactive API docs** — Swagger UI at `/api/docs` with live request testing
-- **Server-wide fingerprint env controls** — deployments can now configure `CAMOFOX_OS`, `CAMOFOX_ALLOW_WEBGL`, `CAMOFOX_SCREEN_WIDTH`, `CAMOFOX_SCREEN_HEIGHT`, and `CAMOFOX_HUMANIZE` without source edits
-  - malformed values fail fast at startup
-  - incomplete screen width/height pairs are ignored safely
-  - `CAMOFOX_OS` and `CAMOFOX_SCREEN_*` are generation-time controls; existing sidecars are preserved until the operator resets them intentionally
-  - `CAMOFOX_ALLOW_WEBGL` and `CAMOFOX_HUMANIZE` are launch-time overrides that apply on every launch even when a sidecar is reused
-- **Idle lifecycle policy** — two-stage cleanup and daemon exit for graceful resource management
-  - `CAMOFOX_IDLE_TIMEOUT_MS` controls Stage 1 idle cleanup threshold (default: 30 minutes)
-  - `CAMOFOX_IDLE_EXIT_TIMEOUT_MS` controls Stage 2 daemon exit quiet window (default: matches Stage 1)
-  - Stage 1 cleanup runs before Stage 2 daemon exit
-  - New interactive activity (tab creation, navigation, interaction) cancels pending cleanup and exit timers
-  - Empty sessions disarm pending exit without blocking cleanup
-  - Launching contexts and staged session creation delay cleanup
-- **Session-level proxy and geo overrides** — `POST /tabs` and CLI `camofox open` now accept `proxyProfile` (named profile from `CAMOFOX_PROXY_PROFILES_FILE`) or raw `proxy` fields (`host`, `port`, `username`, `password`) for session-level proxy configuration
-- **Hybrid geo modes** — `geoMode=explicit-wins` (default, explicit geo fields remain authoritative) and `geoMode=proxy-locked` (requires proxy-derived geo and rejects conflicting explicit geo)
-- **Session-scoped proxy/geo identity** — proxy and geo configuration now scoped by `userId + sessionKey` instead of `userId` alone; same user may run parallel sessions with different proxy/geo profiles using different session keys
-- **Named proxy profiles** — `CAMOFOX_PROXY_PROFILES_FILE` environment variable points to JSON file defining reusable proxy profiles
-- **CLI proxy/geo flags** — `camofox open` supports `--proxy-profile`, `--proxy-host`, `--proxy-port`, `--proxy-username`, `--proxy-password`, and `--geo-mode` for session-level overrides
-- **OpenClaw proxy/geo support** — `/tabs/open` endpoint accepts same `proxyProfile`, `proxy`, and `geoMode` fields as core `/tabs` endpoint
-- **Structured extract** — deterministic schema-driven JSON extraction across core API, CLI, and OpenClaw
-  - validates schema shape before extraction starts
-  - fails the whole request for required-field runtime misses with stable `fieldPath`
-  - keeps raw resource extraction separate from structured extraction semantics
+- **OpenAPI 3.1.0 specification** at `/openapi.json` with request/response schemas, auth requirements, and representative route coverage.
+- **Interactive Swagger UI** at `/api/docs` for live inspection and request testing.
+- **Fingerprint environment controls** for `CAMOFOX_OS`, `CAMOFOX_ALLOW_WEBGL`, `CAMOFOX_SCREEN_WIDTH`, `CAMOFOX_SCREEN_HEIGHT`, and `CAMOFOX_HUMANIZE`.
+- **Idle lifecycle policy** with staged cleanup (`CAMOFOX_IDLE_TIMEOUT_MS`) and daemon exit (`CAMOFOX_IDLE_EXIT_TIMEOUT_MS`).
+- **Session-level proxy/geo overrides** through `proxyProfile`, raw `proxy` fields, and `geoMode`.
+- **OpenClaw proxy/geo parity** for `/tabs/open`.
+- **Structured extraction** across core API, CLI, and OpenClaw with schema validation and deterministic JSON output.
 
 ### Changed
-- **Session reuse and cleanup** now operate on `userId + sessionKey` scope for proxy/geo identity; conflicting proxy/geo requests for existing session profiles are rejected
-- **Context pool eviction** uses `profileKey` (derived from `userId + sessionKey + proxy + geo`) instead of `userId` alone; sibling sessions with different session keys survive individual eviction
+- **Session identity and reuse** now key proxy/geo behavior on `userId + sessionKey` instead of `userId` alone.
+- **Context pool eviction** now uses `profileKey`, preventing sibling sessions from evicting each other incorrectly.
+- **OpenAPI docs behavior** now derives server origin from the incoming request and safe defaults instead of assuming a single static external origin.
+
+### Fixed
+- **Proxy profile validation** now rejects malformed configuration and preserves conflict behavior when an existing session profile disagrees with new proxy/geo input.
+- **Lifecycle cleanup correctness** now avoids cleanup reentry, preserves reused/live contexts, and only arms daemon exit under valid idle conditions.
+- **Fingerprint env application** now routes screen constraints into fingerprint generation rather than launch-only options, preserving the intended sidecar semantics.
+- **Structured extraction contracts** now reject invalid root schemas/selectors and align API, CLI, and OpenClaw error semantics.
+- **OpenAPI request contracts** now mark required fields correctly and remove mismatched schema claims such as unsupported `/act` coverage.
 
 ### Security
-- Server bind now defaults to `127.0.0.1` via `CAMOFOX_HOST`, and startup refuses non-loopback binds unless `CAMOFOX_API_KEY` is configured.
-- Navigation target validation now blocks loopback/private/link-local/metadata hosts on non-loopback deployments by default, with an explicit `CAMOFOX_ALLOW_PRIVATE_NETWORK=true` override for trusted environments.
-- Proxy-enabled non-loopback deployments now fail fast unless `CAMOFOX_ALLOW_PRIVATE_NETWORK=true`, avoiding unsupported proxy/split-DNS safety claims.
+- Default server bind is `127.0.0.1` via `CAMOFOX_HOST`, and non-loopback binds require `CAMOFOX_API_KEY`.
+- Navigation target validation blocks loopback/private/link-local/metadata hosts by default on exposed deployments unless `CAMOFOX_ALLOW_PRIVATE_NETWORK=true`.
+- Proxy-enabled exposed deployments fail fast unless the operator explicitly opts into private-network allowance.
+
+### Docs
+- README, skills, and agent-facing references were updated to document the shipped Wave 2 surfaces.
+- OpenAPI discovery wording, subset-scope wording, request contracts, and origin handling were corrected to match actual shipped behavior.
 
 ### Tests
-- Added E2E coverage for session-level proxy/geo overrides (`tests/e2e/proxy-geo-overrides.test.js`) and OpenClaw proxy/geo support (`tests/e2e/proxy-geo-openclaw.test.js`).
-- Added unit coverage for context pool profileKey eviction (`tests/unit/context-pool-proxy-geo.test.js`).
-- Added structured extraction coverage for the core route, CLI adapter, and OpenClaw `/act` contract, including 400 schema and 422 runtime error paths.
+- Added E2E coverage for security hardening, proxy/geo overrides, OpenClaw proxy/geo support, fingerprint env controls, lifecycle cleanup/exit, OpenAPI docs, and structured extraction.
+- Added unit coverage for profile-key eviction, lifecycle state handling, proxy profile parsing, structured extractor schema/runtime contracts, and URL security validation.
 
 ## [2.3.0] - 2026-05-03
 
