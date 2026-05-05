@@ -147,7 +147,7 @@ Global flag reminders:
 
 API Documentation:
 - Interactive docs: `GET /api/docs` (Swagger UI)
-- OpenAPI 3.1.0 spec: `GET /openapi.json`
+- OpenAPI 3.1.0 spec for a representative subset of routes: `GET /openapi.json`
 
 Core tab flow:
 ```bash

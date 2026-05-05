@@ -65,7 +65,7 @@ camofox server status
 
 ## API Basics
 - Base URL: `http://localhost:9377`
-- API Documentation: `GET /api/docs` (Swagger UI), `GET /openapi.json` (OpenAPI 3.1.0 spec)
+- API Documentation: `GET /api/docs` (Swagger UI), `GET /openapi.json` (OpenAPI 3.1.0 spec for a representative subset of routes)
 - Health: `GET /health`
 - Create tab: `POST /tabs` with `{ userId, sessionKey|listItemId, url? }`
 - List tabs: `GET /tabs?userId=...`
