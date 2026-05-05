@@ -34,26 +34,27 @@ const PKG_VERSION = (() => {
 	throw new Error('Unable to resolve server version from package.json');
 })();
 
-export const openapiSpec: OpenAPIV3_1.Document = {
-	openapi: '3.1.0',
-	info: {
-		title: 'Camofox Browser API',
-		version: PKG_VERSION,
-		description:
-			'Camofox is a fingerprint-resistant browser automation server powered by Camoufox. ' +
-			'It provides both a core REST API and OpenClaw-compatible endpoints for browser automation tasks.',
-		license: {
-			name: 'MIT',
-			url: 'https://github.com/redf0x1/camofox-browser/blob/main/LICENSE',
+export function buildOpenapiSpec(serverUrl = 'http://localhost:9377'): OpenAPIV3_1.Document {
+	return {
+		openapi: '3.1.0',
+		info: {
+			title: 'Camofox Browser API',
+			version: PKG_VERSION,
+			description:
+				'Camofox is a fingerprint-resistant browser automation server powered by Camoufox. ' +
+				'It provides both a core REST API and OpenClaw-compatible endpoints for browser automation tasks.',
+			license: {
+				name: 'MIT',
+				url: 'https://github.com/redf0x1/camofox-browser/blob/main/LICENSE',
+			},
 		},
-	},
-	servers: [
-		{
-			url: 'http://localhost:9377',
-			description: 'Local default server',
-		},
-	],
-	paths: {
+		servers: [
+			{
+				url: serverUrl,
+				description: 'Current server origin',
+			},
+		],
+		paths: {
 		'/health': {
 			get: {
 				summary: 'Health check',
@@ -713,15 +714,18 @@ export const openapiSpec: OpenAPIV3_1.Document = {
 				},
 			},
 		},
-	},
-	tags: [
-		{
-			name: 'Core',
-			description: 'Core Camofox Browser API endpoints',
 		},
-		{
-			name: 'OpenClaw',
-			description: 'OpenClaw-compatible browser automation endpoints',
-		},
-	],
-};
+		tags: [
+			{
+				name: 'Core',
+				description: 'Core Camofox Browser API endpoints',
+			},
+			{
+				name: 'OpenClaw',
+				description: 'OpenClaw-compatible browser automation endpoints',
+			},
+		],
+	};
+}
+
+export const openapiSpec = buildOpenapiSpec();

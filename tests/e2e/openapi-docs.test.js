@@ -62,14 +62,14 @@ describe('OpenAPI/Docs Endpoints', () => {
       expect(spec.components.securitySchemes.adminKey.name).toBe('X-Admin-Key');
     });
 
-    test('spec advertises the default local server URL', async () => {
+    test('spec advertises the current request origin', async () => {
       const response = await fetch(`${serverUrl}/openapi.json`);
       const spec = await response.json();
 
       expect(spec.servers).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            url: 'http://localhost:9377',
+            url: serverUrl,
           }),
         ]),
       );
@@ -369,6 +369,16 @@ describe('OpenAPI/Docs Endpoints', () => {
       // Verify Swagger UI is present
       expect(html).toContain('swagger-ui');
       expect(html.toLowerCase()).toContain('swagger');
+    });
+
+    test('Swagger UI bootstraps from /openapi.json', async () => {
+      const response = await fetch(`${serverUrl}/api/docs/swagger-ui-init.js`);
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-type')).toContain('javascript');
+
+      const initScript = await response.text();
+      expect(initScript).toContain('/openapi.json');
     });
   });
 });
