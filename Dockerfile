@@ -60,6 +60,6 @@ ENV CAMOFOX_PORT=9377
 ENV NODE_ENV=production
 
 # Persistent data directory (profiles/cookies/downloads) — mount with `-v ~/.camofox:/home/node/.camofox` to persist across container rebuilds
-VOLUME /home/node/.camofox
+#VOLUME /home/node/.camofox
 
 CMD ["node", "dist/src/server.js"]
